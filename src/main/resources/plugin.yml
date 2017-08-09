@@ -1,0 +1,9 @@
+name: VanillaSurvivalGames
+main: com.simonorj.mc.VanillaSurvivalGames.VanillaSurvivalGames
+version: {$VersionNumber}
+author: SimonOrJ
+commands:
+  tag:
+    aliases: [gametag,taggame,gt,tg]
+    description: Vanilla-friendly tag game.
+    usage: /tag [join|leave|it|reset]
