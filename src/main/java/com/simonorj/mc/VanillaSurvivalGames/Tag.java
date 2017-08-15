@@ -1,4 +1,4 @@
-package com.simonorj.mc.VanillaSurvivalGames;
+package com.simonorj.mc.vanillasurvivalgames;
 
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;

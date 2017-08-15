@@ -1,4 +1,4 @@
-package com.simonorj.mc.VanillaSurvivalGames;
+package com.simonorj.mc.vanillasurvivalgames;
 
 import java.util.HashSet;
 
