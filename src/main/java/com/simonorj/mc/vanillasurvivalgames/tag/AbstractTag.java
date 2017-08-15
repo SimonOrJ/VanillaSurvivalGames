@@ -1,4 +1,4 @@
-package com.simonorj.mc.vanillasurvivalgames;
+package com.simonorj.mc.vanillasurvivalgames.tag;
 
 import java.util.HashSet;
 
@@ -9,10 +9,13 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+
+import com.simonorj.mc.vanillasurvivalgames.VanillaSurvivalGames;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
@@ -29,11 +32,9 @@ public abstract class AbstractTag {
 	protected final VanillaSurvivalGames plugin;
 	protected abstract String[] getScoreboard();
 
-	abstract String getGameName();
+	public abstract String getGameName();
 	
-	// Taking advantage of OOP
-	
-	AbstractTag(VanillaSurvivalGames plugin, String tag) {
+	public AbstractTag(VanillaSurvivalGames plugin, String tag) {
 		// Initial Variables
 		this.plugin = plugin;
 		this.TAG = tag;
@@ -65,11 +66,9 @@ public abstract class AbstractTag {
 		} else {
 			team3 = team1;
 		}
-		
-		
 	}
 	
-	final void reset() {
+	public final void reset() {
 		gameReseting();
 		for (Player p : playing) {
 			team2.addEntry(p.getName());
@@ -77,18 +76,18 @@ public abstract class AbstractTag {
 		}
 	}
 	
-	final boolean addPlayer(Player p) {
+	public final boolean addPlayer(Player p) {
 		if (playing.contains(p))
 			return false;
 		
 		p.setScoreboard(scoreboard);
 		playing.add(p);
-		
+		broadcastAction(actionHeading(p.getName() + " joined the game"));
 		added(p);
 		return true;
 	}
 	
-	final void removePlayer(Player p) {
+	public final void removePlayer(Player p) {
 		// True means he was attacker/attacked; "false" means currently in-game
 		p.sendMessage(tagHeading("You left the game."));
 		playing.remove(p);
@@ -96,6 +95,7 @@ public abstract class AbstractTag {
 		scoreboard.resetScores(p.getName());
 		p.setScoreboard(plugin.getServer().getScoreboardManager().getMainScoreboard());
 		
+		broadcastAction(actionHeading(p.getName() + " left the game"));
 		removed(p); // Fire player leaving
 		
     	if (playing.isEmpty()) {
@@ -105,25 +105,50 @@ public abstract class AbstractTag {
     	}
 	}
 	
-	final void scoreTaggingPlayer(Player p) {
+	public final HashSet<Player> setListPlayers() { return playing; }
+	
+	protected final void scoreTaggingPlayer(Player p) {
 		team1.addEntry(p.getName());
 		obj.getScore(p.getName()).setScore(8);
 	}
 	
-	final void scoreFleeingPlayer(Player p) {
+	protected final void scoreFleeingPlayer(Player p) {
 		team2.addEntry(p.getName());
 		obj.getScore(p.getName()).setScore(5);
 	}
 	
-	final void scoreOutPlayer(Player p) {
+	protected final void scoreOutPlayer(Player p) {
 		team3.addEntry(p.getName());
 		obj.getScore(p.getName()).setScore((team1 == team3) ? 8 : 2);
 	}
 	
-	protected final HashSet<Player> setListPlayers() { return playing; }
-	protected final boolean setHas(Player p) { return playing.contains(p); }
+	protected final void scoreTimer() {
+		new BukkitRunnable() {
+			private String last = null;
+
+			@Override
+			public void run() {
+				if (last == null) {
+					setup();
+					return;
+				}
+				
+			}
+			
+			private void setup() {
+				obj.getScore(ChatColor.RESET.toString()).setScore(1);
+			}
+			
+			private void disband() {
+				scoreboard.resetScores(ChatColor.RESET.toString());
+				scoreboard.resetScores(last);
+				this.cancel();
+			}
+			
+		};
+	}
 	
-	final TextComponent actionHeading(String msg) {
+	protected final TextComponent actionHeading(String msg) {
 		TextComponent t = new TextComponent(),
 				a = new TextComponent(TAG);
 		t.setColor(ChatColor.WHITE);
@@ -135,27 +160,27 @@ public abstract class AbstractTag {
 		return t;
 	}
 	
-	final void actionBar(Player p, String msg) {
+	protected final void actionBar(Player p, String msg) {
 		p.spigot().sendMessage(ChatMessageType.ACTION_BAR, actionHeading(msg));
 	}
 	
-	final void broadcastAction(TextComponent msg) {
+	protected final void broadcastAction(TextComponent msg) {
 		for (Player p : playing) {
 			p.spigot().sendMessage(ChatMessageType.ACTION_BAR, msg);
 		}
 	}
 	
-	final void broadcast(TextComponent msg) {
+	protected final void broadcast(TextComponent msg) {
 		for (Player p : playing) {
 			p.spigot().sendMessage(msg);
 		}
 	}
 	
-	final String tagHeading(String msg) {
+	protected final String tagHeading(String msg) {
 		return ChatColor.YELLOW.toString() + ChatColor.BOLD + "[" + ChatColor.YELLOW + TAG + ChatColor.BOLD + "] " + ChatColor.GRAY + msg;
 	}
 	
-	final TextComponent tagTCHeading() {
+	protected final TextComponent tagTCHeading() {
 		TextComponent t = new TextComponent(),
 				a = new TextComponent("["),
 				b = new TextComponent(TAG),
@@ -173,7 +198,7 @@ public abstract class AbstractTag {
 		return t;
 	}
 	
-	final TextComponent tagTCHeading(String msg) {
+	protected final TextComponent tagTCHeading(String msg) {
 		TextComponent t = tagTCHeading();
 		t.addExtra(msg);
 		return t;
@@ -208,8 +233,8 @@ public abstract class AbstractTag {
 	
     abstract protected void added(Player joiner);
     abstract protected void hit(Player hitter, Player victim);
-    abstract protected void volunteer(Player volunteer);
     abstract protected void removed(Player quitter);
     abstract protected void gameReseting();
-	abstract void sendStatus(Player p);
+    abstract public void volunteer(Player volunteer);
+	abstract public void sendStatus(Player p);
 }

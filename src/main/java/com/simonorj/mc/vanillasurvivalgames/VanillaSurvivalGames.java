@@ -8,6 +8,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.simonorj.mc.vanillasurvivalgames.tag.AbstractTag;
+import com.simonorj.mc.vanillasurvivalgames.tag.Tag;
+
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -18,6 +21,7 @@ public class VanillaSurvivalGames extends JavaPlugin {
 	private static final TextComponent HELP = new TextComponent();
 	
 	public VanillaSurvivalGames() {
+		// Construct HELP variable
 		String[][] help = {
 				{"/game help","Show this menu"},
 				{"/game list","List all existing games"},
@@ -333,7 +337,7 @@ public class VanillaSurvivalGames extends JavaPlugin {
 		}
 	}
 	
-	void removeGame(AbstractTag game) {
+	public void removeGame(AbstractTag game) {
 		tags.remove(game);
 	}
 }

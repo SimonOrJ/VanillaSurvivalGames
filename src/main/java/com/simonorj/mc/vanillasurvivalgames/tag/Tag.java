@@ -1,7 +1,9 @@
-package com.simonorj.mc.vanillasurvivalgames;
+package com.simonorj.mc.vanillasurvivalgames.tag;
 
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import com.simonorj.mc.vanillasurvivalgames.VanillaSurvivalGames;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -12,11 +14,11 @@ public class Tag extends AbstractTag {
 	private static final String GAME_NAME = "Tag";
 	private Player tagger = null, tagBack = null;
 	
-	String getGameName() {
+	public String getGameName() {
 		return GAME_NAME;
 	}
 	
-	Tag(VanillaSurvivalGames plugin) {
+	public Tag(VanillaSurvivalGames plugin) {
 		super(plugin,"Tag");
 	}
 
@@ -27,7 +29,6 @@ public class Tag extends AbstractTag {
 
 	@Override
 	protected void added(Player joiner) {
-		broadcastAction(actionHeading(joiner.getName() + " joined the game of tag"));
 		scoreFleeingPlayer(joiner);
 	}
 
@@ -58,7 +59,7 @@ public class Tag extends AbstractTag {
 	}
 
 	@Override
-	protected void volunteer(Player volunteer) {
+	public void volunteer(Player volunteer) {
 		if (tagger != null)
 			scoreFleeingPlayer(tagger);
 		scoreTaggingPlayer(volunteer);
@@ -69,7 +70,6 @@ public class Tag extends AbstractTag {
 
 	@Override
 	protected void removed(Player quitter) {
-		broadcastAction(actionHeading(ChatColor.WHITE + quitter.getName() + ChatColor.GRAY + " left the game of tag"));
 		if (quitter == tagger) {
 			tagger = null;
 			TextComponent t = tagTCHeading("The tagger has left.  Click "),
@@ -85,7 +85,7 @@ public class Tag extends AbstractTag {
 	}
 
 	@Override
-	void sendStatus(Player p) {
+	public void sendStatus(Player p) {
 		if (tagger != null) {
 			p.sendMessage(tagHeading(ChatColor.WHITE + tagger.getName() + ChatColor.GRAY + " is it!"));
 		} else {
