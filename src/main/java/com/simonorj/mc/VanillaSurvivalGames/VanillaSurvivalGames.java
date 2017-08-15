@@ -1,6 +1,7 @@
 package com.simonorj.mc.VanillaSurvivalGames;
 
 import java.util.HashSet;
+import java.util.Iterator;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -8,11 +9,56 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 
 // Hitting-tagging based games
 public class VanillaSurvivalGames extends JavaPlugin {
 	private HashSet<AbstractTag> tags = new HashSet<>();
+	private static final TextComponent HELP = new TextComponent();
+	
+	public VanillaSurvivalGames() {
+		String[][] help = {
+				{"/game help","Show this menu"},
+				{"/game list","List all existing games"},
+				{"/game join <player>","Join a game the player is in"},
+				{"/game create <game type>","Create a new game"},
+				{"-- While in game:"},
+				{"/game invite <player...>","Invite a player to the game"},
+				{"/game it","Volunteer to be the tagger or seeker"},
+				{"/game status","Show the status of the game"},
+				{"/game reset","Reset the game"},
+				{"/game leave","Leave the game"},
+		};
+		
+		TextComponent h = new TextComponent("Minigame Menu");
+		h.setBold(true);
+		h.setColor(ChatColor.GOLD);
+		
+		HELP.setColor(ChatColor.GRAY);
+		HELP.addExtra("----- ");
+		HELP.addExtra(h);
+		HELP.addExtra(" -----\n");
+
+		for (String[] s : help) {
+			if (s.length == 1) {
+				HELP.addExtra(s[0]);
+				HELP.addExtra("\n");
+				continue;
+			}
+			TextComponent a = new TextComponent(s[0]);
+			a.setColor(ChatColor.YELLOW);
+			a.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, s[0] + " "));
+			
+			HELP.addExtra("- ");
+			HELP.addExtra(a);
+			HELP.addExtra(" - ");
+			HELP.addExtra(s[1]);
+			HELP.addExtra("\n");
+		}
+		
+		HELP.addExtra("--");
+	}
 	
 	@Override
 	public void onDisable() {
@@ -24,6 +70,7 @@ public class VanillaSurvivalGames extends JavaPlugin {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		// Check if player is in a game
 		AbstractTag game = null;
+		
 		// NOTE: If variable `game` is not null, sender is definitely a player.
 		if (sender instanceof Player) {
 			for (AbstractTag t : tags) {
@@ -36,12 +83,17 @@ public class VanillaSurvivalGames extends JavaPlugin {
 		
 		if (args.length == 0) {
 			if (game == null) {
-				// send help
-				return false;
+				sender.spigot().sendMessage(HELP);
+				return true;
 			} else {
 				game.sendStatus((Player)sender);
 				return true;
 			}
+		}
+		
+		if (args[0].equalsIgnoreCase("help")) {
+			sender.spigot().sendMessage(HELP);
+			return true;
 		}
 		
 		// Lists all the games (so to view it even when in a game)
@@ -50,24 +102,31 @@ public class VanillaSurvivalGames extends JavaPlugin {
 			return true;
 		}
 		
+		if (args[0].equalsIgnoreCase("status")) {
+			if (game == null) {
+				sender.sendMessage(tagMsg(Messages.NOT_IN_GAME.msg));
+				return true;
+			}
+			game.sendStatus((Player)sender);
+		}
+		
+		// No Console Zone
+		if (!(sender instanceof Player)) {
+			sender.sendMessage(tagMsg(Messages.NO_CONSOLE.msg));
+			return true;
+		}
+		Player p = (Player)sender;
+		
 		// Reset a game to initial state (must be in a game)
 		if (args[0].equalsIgnoreCase("reset")) {
 			if (game == null) {
 				sender.sendMessage(tagMsg(Messages.NOT_IN_GAME.msg));
-				// TODO: No Reset Reason
 				return true;
 			}
 			
 			game.reset();
 			return true;
 		}
-		
-		// No Console Zone
-		if (!(sender instanceof Player)) {
-			// TODO: No Console Message
-			return true;
-		}
-		Player p = (Player)sender;
 		
 		// Create a game
 		if (args[0].equalsIgnoreCase("create")) {
@@ -77,9 +136,8 @@ public class VanillaSurvivalGames extends JavaPlugin {
 			}
 			
 			if (args.length == 1) {
-				// TODO: Send types of games
-				sender.sendMessage(tagMsg("Available gamemodes: tag, freezetag, hideandseek, and hideandseek2\n"
-						+ " Usage: /game create <tag|freezetag|hideandseek|hideandseek2>"));
+				sender.sendMessage(tagMsg("Available gamemodes: tag\n"//, freezetag, hideandseek, and hideandseek2\n"
+						+ " Usage: /game create <tag>"));//|freezetag|hideandseek|hideandseek2>"));
 				return true;
 			}
 			
@@ -108,7 +166,12 @@ public class VanillaSurvivalGames extends JavaPlugin {
 			}
 			
 			tags.add(t);
-			sender.sendMessage(tagMsg("You successfully created a new game!"));
+			
+			TextComponent tc= tagTC();
+			tc.addExtra("You successfully created a new game.  Invite people!");
+			tc.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/game invite "));
+			
+			sender.spigot().sendMessage();
 			t.addPlayer(p);
 			
 			return true;
@@ -136,29 +199,28 @@ public class VanillaSurvivalGames extends JavaPlugin {
 				return true;
 			}
 			
+			TextComponent t = tagTC(),
+					a = new TextComponent(p.getName());
+			t.addExtra("You're invited to ");
+			t.addExtra(a);
+			t.addExtra("'s game of " + game.getGameName() + ". Click to join!");
+			t.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,"/game join " + p.getName()));
+			
 			for (int i = 1; i < args.length; i++) {
 				Player inv = getServer().getPlayer(args[i]);
 				if (inv == null) {
 					sender.sendMessage(args[i] + " is not a valid player");
 				} else {
-					
-					TextComponent t = tagTC(),
-							a = new TextComponent(p.getName());
-					t.addExtra("You're invited to ");
-					t.addExtra(a);
-					t.addExtra("'s game of " + game.getGameName() + "!");
-					
 					inv.spigot().sendMessage(t);
-					// TODO: Specify the gamemode of the current game
 				}
 			}
-			
+			return true;
 		}
 		
 		// Joining a game
 		if (args[0].equalsIgnoreCase("join")) {
 			if (game != null) {
-				sender.sendMessage(Messages.ALREADY_IN_GAME.toString());
+				sender.sendMessage(tagMsg(Messages.ALREADY_IN_GAME.msg));
 				return true;
 			}
 			
@@ -176,14 +238,14 @@ public class VanillaSurvivalGames extends JavaPlugin {
 				}
 			}
 			
-			sender.sendMessage(toJoin.getName() + " is not playing any game.");
+			sender.sendMessage(tagMsg(toJoin.getName() + " is not playing any game."));
 			return true;
 		}
 		
 		// Being it or the seeker
-		if (args[0].equalsIgnoreCase("it") || args[0].equalsIgnoreCase("seeker")) {
+		if (args[0].equalsIgnoreCase("it")) {
 			if (game == null) {
-				sender.sendMessage("You're not in game!");
+				sender.sendMessage(tagMsg(Messages.NOT_IN_GAME.msg));
 				return true;
 			}
 			
@@ -194,27 +256,49 @@ public class VanillaSurvivalGames extends JavaPlugin {
 		// Leaving a game
 		if (args[0].equalsIgnoreCase("leave")) {
 			if (game == null) {
-				sender.sendMessage("You're not in game!");
+				sender.sendMessage(tagMsg(Messages.NOT_IN_GAME.msg));
 				return true;
 			}
 			
 			game.removePlayer(p);
 			return true;
 		}
-		return false;
+		
+		sender.sendMessage(tagMsg("Usage: /game [help|list|join|create|invite|it|status|reset|leave]"));
+		return true;
 	}
 	
 	private void listTags(CommandSender sender) {
-		String lists = "";
-		for (AbstractTag t : tags) {
-			String list = "|Game: ";
-			for (Player p : t.setListPlayers()) {
-				list += p.getName() + " ";
-			}
-			list += " |";
-			lists += list;
+		if (tags.isEmpty()) {
+			sender.sendMessage(tagMsg("There are no games running."));
+			return;
 		}
-		sender.sendMessage("Existing games: " + lists + "\nEnter the game using a username!");
+		TextComponent t = tagTC();
+		t.addExtra("Click a game below to join it:\n");
+
+		for (AbstractTag at : tags) {
+			TextComponent a = new TextComponent(at.getGameName()),
+					b = new TextComponent("- ");
+			
+			a.setColor(ChatColor.YELLOW);
+			b.addExtra(a);
+			b.addExtra(": ");
+			
+			Iterator<Player> i = at.setListPlayers().iterator();
+			Player p = i.next();
+			
+			b.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/game join " + p.getName()));
+			b.addExtra(p.getName());
+			
+			
+			while (i.hasNext()) {
+				b.addExtra(", ");
+				b.addExtra(i.next().getName());
+			}
+			t.addExtra(b);
+			t.addExtra("\n");
+		}
+		sender.spigot().sendMessage(t);
 	}
 	
 	String tagMsg(String msg) {
@@ -237,7 +321,8 @@ public class VanillaSurvivalGames extends JavaPlugin {
 	
 	private enum Messages {
 		NOT_IN_GAME("You're not in a game!"),
-		ALREADY_IN_GAME("You're already in a game!");
+		ALREADY_IN_GAME("You're already in a game!"),
+		NO_CONSOLE("You must be a player.");
 		
 		final String msg;
 		private Messages(String s) { msg = s; }

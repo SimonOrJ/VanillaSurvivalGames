@@ -6,4 +6,4 @@ commands:
   game:
     aliases: [games,tag,hideandseek]
     description: Vanilla-friendly tag game.
-    usage: /games [create|join|leave|it|seeker|invite|reset]
+    usage: "Usage: /game [help|list|join|create|invite|it|status|reset|leave]"

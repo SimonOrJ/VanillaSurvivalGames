@@ -2,7 +2,6 @@ package com.simonorj.mc.VanillaSurvivalGames;
 
 import java.util.HashSet;
 
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -15,6 +14,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -123,13 +123,25 @@ public abstract class AbstractTag {
 	protected final HashSet<Player> setListPlayers() { return playing; }
 	protected final boolean setHas(Player p) { return playing.contains(p); }
 	
-	protected final void actionBar(Player p, TextComponent msg) {
-		p.spigot().sendMessage(ChatMessageType.ACTION_BAR, msg);
+	final TextComponent actionHeading(String msg) {
+		TextComponent t = new TextComponent(),
+				a = new TextComponent(TAG);
+		t.setColor(ChatColor.WHITE);
+		a.setColor(ChatColor.YELLOW);
+		a.setBold(true);
+		t.addExtra(a);
+		t.addExtra(": ");
+		t.addExtra(msg);
+		return t;
 	}
 	
-	final void broadcast(String msg) {
+	final void actionBar(Player p, String msg) {
+		p.spigot().sendMessage(ChatMessageType.ACTION_BAR, actionHeading(msg));
+	}
+	
+	final void broadcastAction(TextComponent msg) {
 		for (Player p : playing) {
-			p.sendMessage(msg);
+			p.spigot().sendMessage(ChatMessageType.ACTION_BAR, msg);
 		}
 	}
 	
@@ -141,6 +153,30 @@ public abstract class AbstractTag {
 	
 	final String tagHeading(String msg) {
 		return ChatColor.YELLOW.toString() + ChatColor.BOLD + "[" + ChatColor.YELLOW + TAG + ChatColor.BOLD + "] " + ChatColor.GRAY + msg;
+	}
+	
+	final TextComponent tagTCHeading() {
+		TextComponent t = new TextComponent(),
+				a = new TextComponent("["),
+				b = new TextComponent(TAG),
+				c = new TextComponent("]");
+		a.setBold(true);
+		c.setBold(true);
+		a.setColor(ChatColor.YELLOW);
+		b.setColor(ChatColor.YELLOW);
+		c.setColor(ChatColor.YELLOW);
+		t.setColor(ChatColor.GRAY);
+		t.addExtra(a);
+		t.addExtra(b);
+		t.addExtra(c);
+		t.addExtra(" ");
+		return t;
+	}
+	
+	final TextComponent tagTCHeading(String msg) {
+		TextComponent t = tagTCHeading();
+		t.addExtra(msg);
+		return t;
 	}
 	
 	private class TagListener implements Listener {

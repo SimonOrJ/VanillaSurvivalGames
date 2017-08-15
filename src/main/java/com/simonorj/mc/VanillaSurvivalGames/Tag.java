@@ -27,7 +27,7 @@ public class Tag extends AbstractTag {
 
 	@Override
 	protected void added(Player joiner) {
-		broadcast(tagHeading(ChatColor.WHITE + joiner.getName() + ChatColor.GRAY + " joined the game of tag"));
+		broadcastAction(actionHeading(joiner.getName() + " joined the game of tag"));
 		scoreFleeingPlayer(joiner);
 	}
 
@@ -38,7 +38,7 @@ public class Tag extends AbstractTag {
 		
 		// No tagbacks!
 		if (tagBack == victim) {
-			 hitter.sendMessage(tagHeading("No tagbacks for 3 seconds!"));
+			actionBar(hitter, "No tagbacks for 3 seconds!");
 			return;
 		}
 		
@@ -54,7 +54,7 @@ public class Tag extends AbstractTag {
 			}
 		}.runTaskLater(plugin, 60L);
 		
-		broadcast(victim.getName() + " is now it");
+		broadcastAction(actionHeading(victim.getName() + " is now it"));
 	}
 
 	@Override
@@ -63,15 +63,16 @@ public class Tag extends AbstractTag {
 			scoreFleeingPlayer(tagger);
 		scoreTaggingPlayer(volunteer);
 		tagger = volunteer;
-		broadcast(tagHeading(ChatColor.WHITE + volunteer.getName() + ChatColor.GRAY + " volunteered to be it"));
+		broadcastAction(actionHeading(volunteer.getName() + " volunteered to be it"));
+		volunteer.sendMessage(tagHeading("You Volunteered to be a tagger."));
 	}
 
 	@Override
 	protected void removed(Player quitter) {
-		broadcast(tagHeading(ChatColor.WHITE + quitter.getName() + ChatColor.GRAY + " left the game of tag"));
+		broadcastAction(actionHeading(ChatColor.WHITE + quitter.getName() + ChatColor.GRAY + " left the game of tag"));
 		if (quitter == tagger) {
 			tagger = null;
-			TextComponent t = new TextComponent(" The tagger has left.  Click "),
+			TextComponent t = tagTCHeading("The tagger has left.  Click "),
 					a = new TextComponent("here");
 			t.setColor(ChatColor.GRAY);
 			a.setColor(ChatColor.WHITE);
@@ -85,7 +86,18 @@ public class Tag extends AbstractTag {
 
 	@Override
 	void sendStatus(Player p) {
-		p.sendMessage(tagHeading(ChatColor.WHITE + tagger.getName() + ChatColor.GRAY + " is it!"));
+		if (tagger != null) {
+			p.sendMessage(tagHeading(ChatColor.WHITE + tagger.getName() + ChatColor.GRAY + " is it!"));
+		} else {
+			TextComponent t = tagTCHeading("Nobody is it. Click "),
+					a = new TextComponent("here");
+			a.setColor(ChatColor.WHITE);
+			t.addExtra(a);
+			t.addExtra(" to volunteer to be it!");
+			t.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/vanillasurvivalgames:game it"));
+			
+			p.spigot().sendMessage(t);
+		}
 	}
 
 	@Override
