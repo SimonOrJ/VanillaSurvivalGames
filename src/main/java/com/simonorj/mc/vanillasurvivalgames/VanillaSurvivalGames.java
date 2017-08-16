@@ -319,13 +319,14 @@ public class VanillaSurvivalGames extends JavaPlugin {
 				b = new TextComponent("Game");
 		ret.setColor(ChatColor.GRAY);
 		a.setColor(ChatColor.YELLOW);
+		a.setBold(true);
 		b.setColor(ChatColor.YELLOW);
+		b.setBold(false);
 		a.addExtra(b);
 		a.addExtra("]");
 		ret.addExtra(a);
 		ret.addExtra(" ");
 		return ret;
-		
 	}
 	
 	private enum Messages {
