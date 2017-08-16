@@ -1,5 +1,5 @@
 name: VanillaSurvivalGames
-main: com.simonorj.mc.VanillaSurvivalGames.VanillaSurvivalGames
+main: com.simonorj.mc.vanillasurvivalgames.VanillaSurvivalGames
 version: {$VersionNumber}
 author: SimonOrJ
 commands:

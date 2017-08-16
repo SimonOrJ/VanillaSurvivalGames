@@ -29,6 +29,8 @@ public abstract class AbstractTag {
 	private final Objective obj;
 	private final Team team1, team2, team3;
 	
+	private BukkitRunnable timerTask;
+	private int time;
 	protected final VanillaSurvivalGames plugin;
 	protected abstract String[] getScoreboard();
 
@@ -58,7 +60,7 @@ public abstract class AbstractTag {
 		// Team 2 Member score: 5
 		
 		if (getScoreboard().length >= 4) {
-			obj.getScore("").setScore(4);
+			obj.getScore(ChatColor.BOLD.toString()).setScore(4);
 			obj.getScore(ChatColor.BOLD + getScoreboard()[3] + ":").setScore(3);
 			team3 = scoreboard.registerNewTeam(getScoreboard()[3]);
 			team3.setPrefix(ChatColor.GRAY.toString() + ChatColor.STRIKETHROUGH);
@@ -70,10 +72,10 @@ public abstract class AbstractTag {
 	
 	public final void reset() {
 		gameReseting();
-		for (Player p : playing) {
-			team2.addEntry(p.getName());
-			p.sendMessage(tagHeading("Game was reset."));
-		}
+		if (timerTask != null)
+			timerTask.cancel();
+		
+		broadcast(tagHeading("Game was reset."));
 	}
 	
 	public final boolean addPlayer(Player p) {
@@ -82,6 +84,7 @@ public abstract class AbstractTag {
 		
 		p.setScoreboard(scoreboard);
 		playing.add(p);
+		p.sendMessage(tagHeading("You joined the " + getGameName() + "."));
 		broadcastAction(actionHeading(p.getName() + " joined the game"));
 		added(p);
 		return true;
@@ -89,7 +92,7 @@ public abstract class AbstractTag {
 	
 	public final void removePlayer(Player p) {
 		// True means he was attacker/attacked; "false" means currently in-game
-		p.sendMessage(tagHeading("You left the game."));
+		p.sendMessage(tagHeading("You left the " + getGameName()+ "."));
 		playing.remove(p);
 		scoreboard.getEntryTeam(p.getName()).removeEntry(p.getName());
 		scoreboard.resetScores(p.getName());
@@ -106,6 +109,15 @@ public abstract class AbstractTag {
 	}
 	
 	public final HashSet<Player> setListPlayers() { return playing; }
+	public final String getTime() {
+		if (time <= 60)
+			return time + "s";
+		
+		int m = time/60;
+		int s = time%60;
+		
+		return (m<10 ? "0" : "") + m + ":" + (s<10 ? "0" : "") + time%60;
+	}
 	
 	protected final void scoreTaggingPlayer(Player p) {
 		team1.addEntry(p.getName());
@@ -122,30 +134,61 @@ public abstract class AbstractTag {
 		obj.getScore(p.getName()).setScore((team1 == team3) ? 8 : 2);
 	}
 	
-	protected final void scoreTimer() {
-		new BukkitRunnable() {
-			private String last = null;
-
+	protected final BukkitRunnable getTimerTask() {
+		return timerTask;
+	}
+	
+	protected final BukkitRunnable newTimerTask(String text, int from, boolean increment) {
+		if (timerTask != null) {
+			timerTask.cancel();
+		}
+		// Setup initial scoreboard message
+		time = from;
+		String s = text + ": " + (increment ? ChatColor.GREEN : ChatColor.RED),
+				l = s + time + "s";
+		obj.getScore(ChatColor.RESET.toString()).setScore(1);
+		obj.getScore(l).setScore(0);
+		
+		timerTask = new BukkitRunnable() {
+			private String last = l;
+			private String head = s;
+			
 			@Override
 			public void run() {
-				if (last == null) {
-					setup();
+				if (time == 0 && !increment) {
+					cancel();
 					return;
 				}
-				
-			}
-			
-			private void setup() {
-				obj.getScore(ChatColor.RESET.toString()).setScore(1);
-			}
-			
-			private void disband() {
-				scoreboard.resetScores(ChatColor.RESET.toString());
 				scoreboard.resetScores(last);
-				this.cancel();
+				
+				if (time <= 60) {
+					last = head + (increment ? ++time : --time) + "s";
+				} else {
+					if (increment) time++;
+					else time--;
+					
+					int m = time/60;
+					int s = time%60;
+					
+					last = head + (m<10 ? "0" : "") + m + ":" + (s<10 ? "0" : "") + time%60;
+				}
+				
+				obj.getScore(last).setScore(0);
 			}
 			
+			@Override
+			public void cancel() {
+				super.cancel();
+				timerTask = null;
+				scoreboard.resetScores(last);
+				scoreboard.resetScores(ChatColor.RESET.toString());
+				timerDone();
+			}
 		};
+		
+		timerTask.runTaskTimer(plugin, 20L, 20L);
+		
+		return timerTask;
 	}
 	
 	protected final TextComponent actionHeading(String msg) {
@@ -173,6 +216,12 @@ public abstract class AbstractTag {
 	protected final void broadcast(TextComponent msg) {
 		for (Player p : playing) {
 			p.spigot().sendMessage(msg);
+		}
+	}
+	
+	protected final void broadcast(String msg) {
+		for (Player p : playing) {
+			p.sendMessage(msg);
 		}
 	}
 	
@@ -231,6 +280,7 @@ public abstract class AbstractTag {
 	    }
 	}
 	
+    protected void timerDone() {}
     abstract protected void added(Player joiner);
     abstract protected void hit(Player hitter, Player victim);
     abstract protected void removed(Player quitter);

@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.simonorj.mc.vanillasurvivalgames.tag.AbstractTag;
+import com.simonorj.mc.vanillasurvivalgames.tag.HideAndSeek;
 import com.simonorj.mc.vanillasurvivalgames.tag.Tag;
 
 import net.md_5.bungee.api.ChatColor;
@@ -153,12 +154,15 @@ public class VanillaSurvivalGames extends JavaPlugin {
 				break;
 			case "freeze":
 			case "freezetag":
+				sender.sendMessage(tagMsg("Coming Soon!"));
+				return true;
 				//break;
 			case "hideandseek":
 			case "has":
 			case "has1":
 			case "hideandseek1":
-				//break;
+				t = new HideAndSeek(this);
+				break;
 			case "has2":
 			case "hideandseek2":
 				sender.sendMessage(tagMsg("Coming Soon!"));
@@ -172,10 +176,10 @@ public class VanillaSurvivalGames extends JavaPlugin {
 			tags.add(t);
 			
 			TextComponent tc= tagTC();
-			tc.addExtra("You successfully created a new game.  Invite people!");
+			tc.addExtra("You successfully created a new game.  Click here to invite people!");
 			tc.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/game invite "));
 			
-			sender.spigot().sendMessage();
+			sender.spigot().sendMessage(tc);
 			t.addPlayer(p);
 			
 			return true;
@@ -268,7 +272,7 @@ public class VanillaSurvivalGames extends JavaPlugin {
 			return true;
 		}
 		
-		sender.sendMessage(tagMsg("Usage: /game [help|list|join|create|invite|it|status|reset|leave]"));
+		sender.sendMessage(tagMsg("Unknown subcommand.  Type /game help for more help."));
 		return true;
 	}
 	
@@ -306,14 +310,15 @@ public class VanillaSurvivalGames extends JavaPlugin {
 	}
 	
 	String tagMsg(String msg) {
-		return ChatColor.GRAY + "[" + ChatColor.YELLOW + "Game" + ChatColor.GRAY + "] " + ChatColor.RESET + msg;
+		return ChatColor.YELLOW.toString() + ChatColor.BOLD + "[" + ChatColor.YELLOW + "Game" + ChatColor.BOLD + "] " + ChatColor.GRAY + msg;
 	}
 	
 	TextComponent tagTC() {
 		TextComponent ret = new TextComponent(),
 				a = new TextComponent("["),
 				b = new TextComponent("Game");
-		a.setColor(ChatColor.GRAY);
+		ret.setColor(ChatColor.GRAY);
+		a.setColor(ChatColor.YELLOW);
 		b.setColor(ChatColor.YELLOW);
 		a.addExtra(b);
 		a.addExtra("]");

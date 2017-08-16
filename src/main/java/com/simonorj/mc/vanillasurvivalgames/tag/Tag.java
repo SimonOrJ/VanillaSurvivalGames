@@ -14,14 +14,15 @@ public class Tag extends AbstractTag {
 	private static final String GAME_NAME = "Tag";
 	private Player tagger = null, tagBack = null;
 	
-	public String getGameName() {
-		return GAME_NAME;
-	}
-	
 	public Tag(VanillaSurvivalGames plugin) {
 		super(plugin,"Tag");
 	}
 
+	@Override
+	public String getGameName() {
+		return GAME_NAME;
+	}
+	
 	@Override
 	protected String[] getScoreboard() {
 		return SCOREBOARD;
@@ -66,6 +67,8 @@ public class Tag extends AbstractTag {
 		tagger = volunteer;
 		broadcastAction(actionHeading(volunteer.getName() + " volunteered to be it"));
 		volunteer.sendMessage(tagHeading("You Volunteered to be a tagger."));
+		if (getTimerTask() == null)
+			newTimerTask("Time Elapsed", 0, true);
 	}
 
 	@Override
@@ -80,6 +83,7 @@ public class Tag extends AbstractTag {
 			t.addExtra(" to volunteer to be it!");
 			t.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/vanillasurvivalgames:game it"));
 			
+			getTimerTask().cancel();
 			broadcast(t);
 		}
 	}
