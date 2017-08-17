@@ -15,7 +15,7 @@ public class Tag extends AbstractTag {
 	private Player tagger = null, tagBack = null;
 	
 	public Tag(VanillaSurvivalGames plugin) {
-		super(plugin,"Tag");
+		super(plugin,"Tag",false);
 	}
 
 	@Override

@@ -19,7 +19,7 @@ public class HideAndSeek extends AbstractTag {
 	private boolean hidingTime = false;
 
 	public HideAndSeek(VanillaSurvivalGames plugin) {
-		super(plugin, "Hide&Seek");
+		super(plugin, "Hide&Seek", true);
 		
 	}
 
@@ -105,12 +105,12 @@ public class HideAndSeek extends AbstractTag {
 		
 		hidingTime = true;
 		newTimerTask("Seeking in", 20, false);
-		// TODO: Keep it so the player stays in place during the countdown.
+		frzAddPlayer(seeker);
 	}
 
 	@Override
 	public void sendStatus(Player p) {
-		// TODO Auto-generated method stub
+		p.sendMessage(tagHeading(seeker.getName() + " is currently it!"));
 
 	}
 
@@ -119,6 +119,7 @@ public class HideAndSeek extends AbstractTag {
 		if (!hidingTime)
 			return;
 		
+		frzRemovePlayer(seeker);
 		hidingTime = false;
 		broadcastAction(actionHeading("Seeker is now seeking!"));
 		newTimerTask("Time Elspsed", 0, true);

@@ -1,13 +1,16 @@
 package com.simonorj.mc.vanillasurvivalgames.tag;
 
+import java.util.HashMap;
 import java.util.HashSet;
 
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -25,6 +28,7 @@ public abstract class AbstractTag {
 	private final String TAG;
 	private final HashSet<Player> playing = new HashSet<>();
 	private final TagListener listener = new TagListener();
+	private final FrzListener frzListener;
 	private final Scoreboard scoreboard;
 	private final Objective obj;
 	private final Team team1, team2, team3;
@@ -36,11 +40,18 @@ public abstract class AbstractTag {
 
 	public abstract String getGameName();
 	
-	public AbstractTag(VanillaSurvivalGames plugin, String tag) {
+	public AbstractTag(VanillaSurvivalGames plugin, String tag, boolean freezeListener) {
 		// Initial Variables
 		this.plugin = plugin;
 		this.TAG = tag;
+		
 		plugin.getServer().getPluginManager().registerEvents(listener, plugin);
+		if (freezeListener) {
+			frzListener = new FrzListener();
+			plugin.getServer().getPluginManager().registerEvents(frzListener, plugin);
+		} else {
+			frzListener = null;
+		}
 		
 		// Initiate Scoreboard
 		this.scoreboard = plugin.getServer().getScoreboardManager().getNewScoreboard();
@@ -104,6 +115,7 @@ public abstract class AbstractTag {
     	if (playing.isEmpty()) {
     		// Kill this game.
 			HandlerList.unregisterAll(listener);
+			if (frzListener != null) HandlerList.unregisterAll(frzListener);
 			plugin.removeGame(this);
     	}
 	}
@@ -191,6 +203,14 @@ public abstract class AbstractTag {
 		return timerTask;
 	}
 	
+	protected final void frzAddPlayer(Player p) {
+		frzListener.add(p);
+	}
+	
+	protected final void frzRemovePlayer(Player p) {
+		frzListener.remove(p);
+	}
+	
 	protected final TextComponent actionHeading(String msg) {
 		TextComponent t = new TextComponent(),
 				a = new TextComponent(TAG);
@@ -276,6 +296,33 @@ public abstract class AbstractTag {
 	    		e.setCancelled(true);
 	    		if (pb && phb)
 	    			hit(p, ph);
+	    	}
+	    }
+	}
+	
+	private class FrzListener implements Listener {
+		private HashMap<Player, Location> plist = new HashMap<>();
+		
+		final void add(Player p) {
+			Location l = p.getLocation();
+			plist.put(p, new Location(p.getWorld(), l.getX(), l.getY(), l.getZ()));
+		}
+		
+		final void remove(Player p) {
+			plist.remove(p);
+		}
+		
+	    @EventHandler (priority=EventPriority.MONITOR)
+	    public final void keepStuck(PlayerMoveEvent e) {
+	    	Location l = plist.get(e.getPlayer());
+	    	if (l == null)
+	    		return;
+	    	
+	    	Location t = e.getTo();
+	    	
+	    	if (Math.abs(l.getX() - t.getX()) > 1.5d || Math.abs(l.getZ() - t.getZ()) > 1.5d) {
+		    	e.getPlayer().teleport(l);
+		    	actionBar(e.getPlayer(), "You're not allowed to move now!"); // TODO: TEST
 	    	}
 	    }
 	}
